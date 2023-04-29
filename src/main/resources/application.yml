@@ -1,0 +1,81 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers.enabled: true
+    ratelimiters.enabled: true
+
+spring:
+  cloud:
+    circuitbreaker:
+      bulkhead.resilience4j.enabled: true
+      resilience4j:
+        enabled: true
+        blocking.enabled: true
+        enableSemaphoreDefaultBulkhead: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      # default값 수정 가능
+      default:
+        slidingWindowSize: 5
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 3
+        failureRateThreshold: 60
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: 1000
+        permittedNumberOfCallsInHalfOpenState: 7
+        maxWaitDurationInHalfOpenState: 10000
+        waitDurationInOpenState: 10000
+  #      recordExceptions: java.lang.Exception
+  #      recordFailurePredicate: io.github.robwin.exception.RecordFailurePredicate
+  #      ignoreExceptions: java.lang.Exception
+        #ignoreExceptionPredicate: java.lang.Exception
+        eventConsumerBufferSize: 10
+        registerHealthIndicator: true
+      timeBase:
+        slidingWindowSize: 5
+        slidingWindowType: TIME_BASED
+        minimumNumberOfCalls: 3
+        failureRateThreshold: 80
+        waitDurationInOpenState: 10000
+        eventConsumerBufferSize: 10
+        registerHealthIndicator: true
+    instances:
+      backendA:
+        baseConfig: default
+      backendB:
+        baseConfig: timeBase
+  bulkhead:
+    configs:
+      default:
+        max-concurrent-calls: 25
+        max-wait-duration: 0
+        writable-stack-trace-enabled: true
+    instances:
+      backendA:
+        max-concurrent-calls: 2
+        max-wait-duration: 1ms
+
+  thread-pool-bulkhead:
+    configs:
+      default:
+        max-thread-pool-size: 16
+        core-thread-pool-size: 15
+        queue-capacity: 100
+        keep-alive-duration: 20
+        writable-stack-trace-enabled: true
+    instances:
+      backendA:
+        max-thread-pool-size: 2
+        core-thread-pool-size: 2
+logging:
+  level:
+    root: warn
+
